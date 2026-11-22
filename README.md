@@ -20,6 +20,8 @@ sensor ─▶ anyka_ipc (Tuya overgeslagen) ─▶ RTSP :554 ─▶ jouw server 
 ## ⚠️ Waarschuwing & disclaimer
 
 - Alleen voor **je eigen camera**. Je bent zelf verantwoordelijk.
+- **Alleen art.nr. 3215672.3** (Anyka AK3918AV130L). Een ander artikelnummer (bv. `.2`) kan een
+  andere SoC zijn — dan klopt dit niet en kun je de camera beschadigen. Controleer eerst je chip.
 - Dit flasht het interne geheugen. Een fout kan de camera onbruikbaar maken (**brick-risico**).
   Maak eerst een **back-up van alle MTD-partities** en test alles eerst vanaf SD-kaart.
 - Er zit **geen fabriekssoftware** in deze repo (`anyka_ipc`, firmware-images, kernelmodules zijn
