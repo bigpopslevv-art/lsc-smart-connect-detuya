@@ -1,0 +1,25 @@
+# NOOIT committen: fabriekssoftware (copyright Anyka/Tuya) en geheimen.
+*.sqsh
+*.squashfs
+anyka_ipc
+anyka_ipc.notuya
+*.bin
+mtd*.bin
+dump/
+flash_backup/
+# geheimen
+_ak39_factory.ini
+shadow
+*.db
+tuya_*.db
+_ht_encrypt*.bin
+config/
+*.key
+*.pem
+id_*
+*_key
+# rommel
+diag*.txt
+*.log
+__pycache__/
+*.pyc
