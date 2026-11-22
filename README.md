@@ -1,146 +1,146 @@
-# LSC Smart Connect — de-Tuya (art.nr. 3215672.3 · Anyka AK3918AV130L)
+# LSC Smart Connect — de-Tuya (art. 3215672.3 · Anyka AK3918AV130L)
 
-Haal de **Tuya-cloud** van een goedkope **LSC Smart Connect** indoor-camera (Action,
-art.nr. **3215672.3**, SoC **Anyka AK3918AV130L**) en gebruik hem als **lokale** camera:
-een eigen RTSP-stream naar je eigen server, en verder volledig afgesloten van internet.
+Remove the **Tuya cloud** from a cheap **LSC Smart Connect** indoor camera (Action,
+art. no. **3215672.3**, SoC **Anyka AK3918AV130L**) and run it as a **local** camera:
+its own RTSP stream to your own server, fully cut off from the internet.
 
-De camera blijft de originele `anyka_ipc` draaien (die levert ook het beeld), maar met een
-**4-byte patch** slaat die de Tuya-cloud over. Daarbovenop komt een lockdown zodat het
-apparaat alléén je eigen LAN kan bereiken.
+The camera keeps running the original `anyka_ipc` (that binary also produces the video), but a
+**4-byte patch** makes it skip the Tuya cloud. On top of that a lockdown makes sure the device can
+only reach your own LAN.
 
-> **Status:** werkt. Eén open punt is hardware, geen software — zie *Bekende valkuilen → Brownout*.
+> **Status:** working. The one open issue is hardware, not software — see *Known gotchas → Brownout*.
 
 ```
-sensor ─▶ anyka_ipc (Tuya overgeslagen) ─▶ RTSP :554 ─▶ jouw server (go2rtc) ─▶ browser
-                             └─ geen DNS · geen internetroute · geen IPv6 ─┘
+sensor ─▶ anyka_ipc (Tuya skipped) ─▶ RTSP :554 ─▶ your server (go2rtc) ─▶ browser
+                          └─ no DNS · no internet route · no IPv6 ─┘
 ```
 
 ---
 
-## ⚠️ Waarschuwing & disclaimer
+## ⚠️ Warning & disclaimer
 
-- Alleen voor **je eigen camera**. Je bent zelf verantwoordelijk.
-- **Alleen art.nr. 3215672.3** (Anyka AK3918AV130L). Een ander artikelnummer (bv. `.2`) kan een
-  andere SoC zijn — dan klopt dit niet en kun je de camera beschadigen. Controleer eerst je chip.
-- Dit flasht het interne geheugen. Een fout kan de camera onbruikbaar maken (**brick-risico**).
-  Maak eerst een **back-up van alle MTD-partities** en test alles eerst vanaf SD-kaart.
-- Er zit **geen fabriekssoftware** in deze repo (`anyka_ipc`, firmware-images, kernelmodules zijn
-  copyright van Anyka/Tuya en worden **niet** verspreid). Je patcht je **eigen** gedumpte binary.
-- Zet **nooit** je `_ak39_factory.ini` (wifiwachtwoord), `config/`, `tuya_*.db` of flash-dumps online.
-  Zie `.gitignore`.
-- Werk je met een losse li-ion/li-po accu: let op de **veiligheid** (laadstroom, bescherming).
-
----
-
-## Wat je nodig hebt
-
-- De camera (Anyka AK3918AV130L — check met `cat /proc/cpuinfo` / de modules `ak_isp.ko` etc.).
-- Een **FAT32 micro-SD-kaart** (de boot-hook en het herstel lopen hierover).
-- **Root via telnet.** Dit project gaat ervan uit dat je al root hebt via de bekende
-  community-SD-hack voor deze camera (boot-hook via `/mnt/hostapd` → `hack.sh`, plus
-  `_ak39_factory.ini` die fabriekstest-modus aanzet → telnetd + RTSP). Login: `root` / `anyka`.
-- Een **Linux-machine/server** met `squashfs-tools` (`mksquashfs`/`unsquashfs`) om de
-  APP-partitie te herbouwen, en om go2rtc + de klok-sync te draaien.
-- Een **5V-voeding van ≥ 2A** (zie *Brownout*).
+- For **your own camera** only. You are responsible for what you do.
+- **Only art. no. 3215672.3** (Anyka AK3918AV130L). A different article number (e.g. `.2`) can be a
+  different SoC — then this does not apply and you can damage the camera. Check your chip first.
+- This writes the internal flash. A mistake can brick the camera (**brick risk**). Make a full
+  **back-up of all MTD partitions** first, and test everything from the SD card before flashing.
+- This repo contains **no vendor firmware** (`anyka_ipc`, flash images, kernel modules are
+  copyright Anyka/Tuya and are **not** distributed). You patch your **own** dumped binary.
+- **Never** put your `_ak39_factory.ini` (wifi password), `config/`, `tuya_*.db` or flash dumps
+  online. See `.gitignore`.
+- If you use a loose li-ion/li-po cell: mind the **safety** (charge current, protection).
 
 ---
 
-## Hoe het werkt (stappen)
+## What you need
 
-### 1. Root + volledige back-up
-Krijg root (community-SD-hack) en dump **alle** MTD-partities naar de SD-kaart, zodat je altijd
-terug kunt. Op de camera:
+- The camera (Anyka AK3918AV130L — check via `cat /proc/cpuinfo` / the modules `ak_isp.ko` etc.).
+- A **FAT32 micro-SD card** (the boot hook and the recovery run from it).
+- **Root over telnet.** This project assumes you already have root through the known
+  community SD hack for this camera (boot hook via `/mnt/hostapd` → `hack.sh`, plus an
+  `_ak39_factory.ini` that enables factory-test mode → telnetd + RTSP). Login: `root` / `anyka`.
+- A **Linux machine/server** with `squashfs-tools` (`mksquashfs`/`unsquashfs`) to rebuild the
+  APP partition, and to run go2rtc + the clock sync.
+- A **5V power supply of ≥ 2A** (see *Brownout*).
+
+---
+
+## How it works (steps)
+
+### 1. Root + full back-up
+Get root (community SD hack) and dump **all** MTD partitions to the SD card so you can always roll
+back. On the camera:
 ```sh
 for i in 0 1 2 3 4 5 6 7; do dd if=/dev/mtdblock$i of=/tmp/sd/mtd$i.bin bs=4096; done
 sync; cat /proc/mtd > /tmp/sd/mtd.txt; md5sum /tmp/sd/mtd*.bin > /tmp/sd/md5.txt
 ```
-De APP-partitie (`/usr`, squashfs) heet meestal `mtd7` / `/dev/mtdblock7`.
+The APP partition (`/usr`, squashfs) is usually `mtd7` / `/dev/mtdblock7`.
 
-### 2. Tuya eruit patchen — `patch/patch_notuya.py`
-`main()` in `anyka_ipc` roept op volgorde aan: `ht_media_service_init` (video/audio) →
-`ht_device_ctrl_init` (incl. de fabrieks-RTSP-server) → **`ht_tuya_service_start`** (de hele cloud).
-De patch vervangt de `bl ht_tuya_service_start` (op deze firmware VA `0x10000+0xf0554`) door
-`mov r0, #1` ("gestart, gelukt"). Video en RTSP blijven draaien; Tuya wordt nooit uitgevoerd.
-**4 bytes gewijzigd, verder niets.**
+### 2. Patch out Tuya — `patch/patch_notuya.py`
+`main()` in `anyka_ipc` calls, in order: `ht_media_service_init` (video/audio) →
+`ht_device_ctrl_init` (incl. the factory RTSP server) → **`ht_tuya_service_start`** (the whole cloud).
+The patch replaces the `bl ht_tuya_service_start` (on this firmware VA `0x10000+0xf0554`) with
+`mov r0, #1` ("started, OK"). Video and RTSP keep running; Tuya is never executed.
+**4 bytes changed, nothing else.**
 ```sh
 python3 patch/patch_notuya.py anyka_ipc anyka_ipc.notuya
 ```
-> Het call-adres is firmware-specifiek. Controleer met een disassembler (zie `tools/`) dat op
-> die plek echt `bl ht_tuya_service_start` staat voordat je patcht — het script checkt dit.
+> The call address is firmware-specific. Verify with a disassembler (see `tools/`) that there is
+> really a `bl ht_tuya_service_start` at that spot before patching — the script checks this.
 
-### 3. APP-partitie herbouwen — `firmware/build.sh`
-Pak de squashfs uit, leg de gepatchte binary erin, voeg de eigen scripts toe, pak weer in met
-**precies dezelfde** compressie (xz, blok 128 KB). Draait op je Linux-box. Pas de md5's en
-paden bovenin aan voor jouw dump. Resultaat: `usr_new.sqsh` (moet ≤ grootte van de partitie zijn).
+### 3. Rebuild the APP partition — `firmware/build.sh`
+Unpack the squashfs, drop in the patched binary, add the custom scripts, repack with the **exact
+same** compression (xz, 128 KB block). Runs on your Linux box. Adjust the md5s and paths at the top
+for your own dump. Result: `usr_new.sqsh` (must be ≤ the partition size).
 
-### 4. Flashen — `firmware/flash.sh`
-Schrijft `usr_new.sqsh` naar `/dev/mtdblock7`, **leest terug en vergelijkt de md5**, en herstart
-alleen als die klopt. Gebruik alleen `/bin/busybox` (staat in ROOTFS, wordt niet overschreven).
+### 4. Flash — `firmware/flash.sh`
+Writes `usr_new.sqsh` to `/dev/mtdblock7`, **reads it back and compares the md5**, and only reboots
+if it matches. Uses only `/bin/busybox` (in ROOTFS, which is not overwritten).
 ```sh
-sh flash.sh usr_new.sqsh <md5> <aantal_4k_blokken>
+sh flash.sh usr_new.sqsh <md5> <number_of_4k_blocks>
 ```
-**Alternatief zonder flashen:** laat alles vanaf de SD-kaart draaien (zie *Herstel*). Veiliger om
-mee te testen.
+**Alternative without flashing:** run everything from the SD card instead (see *Recovery*). Safer to
+test with.
 
 ### 5. Lockdown — `firmware/lsc_lockdown.sh`
-Draait bij het opstarten (via `service.sh`, vóór anyka_ipc). Elke 2 s, voor altijd:
-- vast IP (`udhcpc` is kapot op deze camera: symlink-loop), geen DHCP-server, geen IPv6, lege `/etc/resolv.conf`;
-- **default gateway = de camera zélf.** Nodig! anyka_ipc pingt de gateway; zonder antwoord
-  verbreekt hij de wifi elke ~30 s. Met zichzelf als gateway slaagt die ping, maar internetverkeer
-  kan nergens heen. Pas ná 90 s actief, want eerder verstoort het de eerste wifi-verbinding.
+Runs at boot (via `service.sh`, before anyka_ipc). Every 2 s, forever:
+- static IP (`udhcpc` is broken on this camera: symlink loop), no DHCP server, no IPv6, empty `/etc/resolv.conf`;
+- **default gateway = the camera itself.** Required! anyka_ipc pings the gateway; without a reply it
+  drops the wifi every ~30 s. Pointing the gateway at itself makes that ping succeed, while internet
+  traffic has nowhere to go. Only active after 90 s, because earlier it disturbs the first wifi association.
 
-### 6. Statuslampje — `firmware/lsc_led.sh`
-30 s snel knipperen bij opstarten; daarna 1 flits per 2 min mét netwerk, 2× kort zónder netwerk.
-(De originele `state/red/blue_led.sh` worden uitgeschakeld zodat anyka_ipc het lampje niet overneemt.)
+### 6. Status LED — `firmware/lsc_led.sh`
+Fast blink for 30 s at boot; then 1 flash per 2 min with network, 2 short blinks without network.
+(The original `state/red/blue_led.sh` are disabled so anyka_ipc does not take over the LED.)
 
-### 7. Klok — `server/camtime.py`
-De camera heeft geen internet/NTP, dus je **server** zet de klok elke minuut gelijk via telnet.
-Zomer-/wintertijd wordt geregeld in het formaat dat anyka_ipc zélf leest (`UTC-01:00` / `UTC-02:00`).
+### 7. Clock — `server/camtime.py`
+The camera has no internet/NTP, so your **server** sets the clock every minute over telnet. DST is
+handled in the format anyka_ipc itself reads (`UTC-01:00` / `UTC-02:00`).
 
-### 8. Live beeld — `server/go2rtc.yaml.example`
-Draai [go2rtc](https://github.com/AlexxIT/go2rtc) op je server; kijk in de browser op
-`http://<server>:1984/stream.html?src=camera`. Opnemen/bewegingsdetectie kan met go2rtc of Frigate.
-
----
-
-## Herstel — `sd-recovery/`
-Zet `hostapd` + `hack.sh` (+ je herbouwde `usr_new.sqsh` en `_ak39_factory.ini`) op de SD-kaart.
-Bij elke boot controleert `hack.sh` de APP-partitie en **schrijft de bewezen goede image terug**
-als het flash beschadigd is, met verificatie en herstart. Zit de camera in een slechte staat,
-dan is "kaart erin, stroom erin" je redmiddel. Kaart eruit = terug naar normaal gedrag.
+### 8. Live video — `server/go2rtc.yaml.example`
+Run [go2rtc](https://github.com/AlexxIT/go2rtc) on your server; view it in the browser at
+`http://<server>:1984/stream.html?src=camera`. Recording/motion detection can be done with go2rtc or Frigate.
 
 ---
 
-## Bekende valkuilen (met bloed, zweet en tranen gevonden)
+## Recovery — `sd-recovery/`
+Put `hostapd` + `hack.sh` (+ your rebuilt `usr_new.sqsh` and `_ak39_factory.ini`) on the SD card.
+On every boot `hack.sh` checks the APP partition and **writes the known-good image back** if the
+flash is damaged, with verification and reboot. If the camera ends up in a bad state, "card in,
+power on" is your lifeline. Card out = back to normal behaviour.
 
-- **Brownout bij dag/nacht-wissel.** Op het moment dat het IR-cut-filter omklapt + de IR-leds
-  schakelen, is er een piekstroom. Een zwakke voeding (pc-USB, dunne kabel) zakt dan even in en de
-  chip **reset**. Niet elke wissel, dus het lijkt willekeurig. **Fix: 5V-voeding ≥ 2A**, korte dikke
-  kabel, en eventueel een **elco (~1000 µF) over de 5V** vlak bij de camera. Geen softwarefout.
-- **Tijdzone-formaat.** `anyka_ipc` leest `/etc/config/TZ` zélf en snapt **alleen** `UTC±HH:MM`.
-  Zet je daar een POSIX-TZ string in (`CET-1CEST,...`), dan loopt hij vast → geen wifi → reboots.
-- **`udhcpc` kapot** (symlink-loop "Too many levels of symbolic links"): gebruik een **vast IP**.
-- **Self-gateway nodig**, anders her-associeert de wifi elke ~30 s (zie stap 5).
-- **SD-kaart soms niet gedetecteerd** bij koude start, vooral bij zwakke voeding → stevig
-  herplaatsen, betere voeding. Zonder kaart draait `hack.sh` niet (hook zit in AP-modus-pad).
-- **CRLF.** Alle shell-scripts moeten **LF** regeleindes hebben; draai ze door `tr -d '\r'` +
-  `sh -n` voordat ze op de camera komen.
+---
+
+## Known gotchas (found with blood, sweat and tears)
+
+- **Brownout on the day/night switch.** The moment the IR-cut filter flips + the IR LEDs switch,
+  there is a current spike. A weak supply (PC USB, thin cable) dips and the chip **resets**. Not on
+  every switch, so it looks random. **Fix: 5V supply ≥ 2A**, a short thick cable, and optionally a
+  **capacitor (~1000 µF) across the 5V** close to the camera. Not a software bug.
+- **Timezone format.** `anyka_ipc` reads `/etc/config/TZ` itself and only understands `UTC±HH:MM`.
+  Put a POSIX-TZ string there (`CET-1CEST,...`) and it hangs → no wifi → reboots.
+- **`udhcpc` broken** (symlink loop "Too many levels of symbolic links"): use a **static IP**.
+- **Self-gateway required**, otherwise the wifi re-associates every ~30 s (see step 5).
+- **SD card sometimes not detected** on a cold boot, especially on a weak supply → reseat firmly,
+  better supply. Without the card `hack.sh` does not run (the hook lives in the AP-mode path).
+- **CRLF.** All shell scripts must have **LF** line endings; run them through `tr -d '\r'` +
+  `sh -n` before they go on the camera.
 
 ---
 
 ## Config
-Voorbeeld-IP's in de scripts: camera `192.168.1.240`, router `192.168.1.1`. Pas aan naar je eigen
-net in: `firmware/lsc_lockdown.sh`, `firmware/lsc_led.sh`, `sd-recovery/hack.sh`,
-`server/camtime.py`, en de `tools/`. Wifi vul je in `_ak39_factory.ini` (zie `.example`).
+Example IPs in the scripts: camera `192.168.1.240`, router `192.168.1.1`. Change them to your own
+network in: `firmware/lsc_lockdown.sh`, `firmware/lsc_led.sh`, `sd-recovery/hack.sh`,
+`server/camtime.py`, and the `tools/`. Wifi goes in `_ak39_factory.ini` (see the `.example`).
 
 ## `tools/`
-Reverse-engineering- en transporthulpjes (Python, `capstone` + `pyelftools`): `ra.py`/`names.py`
-(ARM32-disassembly met symboolnamen uit `.dynsym`), `tn.py` (mini-telnetclient),
-`push2.py`/`pull2.py` (bestanden via telnet+base64 van/naar de camera).
+Reverse-engineering and transport helpers (Python, `capstone` + `pyelftools`): `ra.py`/`names.py`
+(ARM32 disassembly with symbol names from `.dynsym`), `tn.py` (mini telnet client),
+`push2.py`/`pull2.py` (files to/from the camera over telnet+base64).
 
 ## Credits
-- De Anyka/LSC community voor de oorspronkelijke SD-boot-hack en root-methode.
-- [go2rtc](https://github.com/AlexxIT/go2rtc) voor de streaming.
+- The Anyka/LSC community for the original SD boot hack and root method.
+- [go2rtc](https://github.com/AlexxIT/go2rtc) for the streaming.
 
-## Licentie
-MIT (alleen de scripts in deze repo). Fabriekssoftware valt hier niet onder en zit er niet in.
+## License
+MIT (the scripts in this repo only). Vendor firmware is not covered and is not included.
