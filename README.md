@@ -1,4 +1,4 @@
-# LSC Smart Connect — de-Tuya (Anyka AK3918AV130L)
+# LSC Smart Connect — de-Tuya (art.nr. 3215672.3 · Anyka AK3918AV130L)
 
 Haal de **Tuya-cloud** van een goedkope **LSC Smart Connect** indoor-camera (Action,
 art.nr. **3215672.3**, SoC **Anyka AK3918AV130L**) en gebruik hem als **lokale** camera:
