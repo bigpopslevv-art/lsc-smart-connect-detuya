@@ -1,0 +1,5 @@
+# Shell-scripts draaien op de camera (Linux/busybox): altijd LF, nooit CRLF.
+* text=auto eol=lf
+*.sh text eol=lf
+hostapd text eol=lf
+*.py text eol=lf
