@@ -1,5 +1,5 @@
-# go2rtc op je server: haalt de RTSP-stream en toont die in de browser.
-# Openen: http://<server-ip>:1984/stream.html?src=camera
+# go2rtc on your server: pulls the RTSP stream and shows it in the browser.
+# Open: http://<server-ip>:1984/stream.html?src=camera
 streams:
   camera: rtsp://192.168.1.240:554/main_ch
 api:

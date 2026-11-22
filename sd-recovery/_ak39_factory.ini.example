@@ -1,6 +1,6 @@
-; Hernoem naar _ak39_factory.ini op de FAT32 SD-kaart.
-; Dit zet de camera in fabriekstest-modus: die start telnetd en de RTSP-server
-; (anyka_ipc serveert dan rtsp://<ip>:554/main_ch). Vul je eigen wifi in.
+; Rename to _ak39_factory.ini on the FAT32 SD card.
+; This puts the camera in factory-test mode: it starts telnetd and the RTSP server
+; (anyka_ipc then serves rtsp://<ip>:554/main_ch). Fill in your own wifi.
 [wifi_station]
 ssid=YOUR_WIFI_SSID
 passphrase=YOUR_WIFI_PASSWORD

@@ -1,4 +1,4 @@
-# NOOIT committen: fabriekssoftware (copyright Anyka/Tuya) en geheimen.
+# NEVER commit: vendor software (copyright Anyka/Tuya) and secrets.
 *.sqsh
 *.squashfs
 anyka_ipc
@@ -7,7 +7,7 @@ anyka_ipc.notuya
 mtd*.bin
 dump/
 flash_backup/
-# geheimen
+# secrets
 _ak39_factory.ini
 shadow
 *.db
@@ -18,7 +18,7 @@ config/
 *.pem
 id_*
 *_key
-# rommel
+# clutter
 diag*.txt
 *.log
 __pycache__/

@@ -1,4 +1,4 @@
-# Minimale telnet-client: logt in op de camera en voert commando's uit (argv[1:]).
+# Minimal telnet client: logs in to the camera and runs commands (argv[1:]).
 import socket, sys, time
 HOST = '192.168.1.240'
 s = socket.create_connection((HOST, 23), timeout=10)
@@ -10,7 +10,7 @@ def read(t=1.5):
             d = s.recv(4096)
             if not d: break
             out = bytearray(); i = 0
-            while i < len(d):  # telnet-opties weigeren
+            while i < len(d):  # refuse telnet options
                 if d[i] == 255 and i + 2 < len(d):
                     s.send(bytes([255, 252 if d[i+1] == 253 else 254, d[i+2]])); i += 3
                 else:

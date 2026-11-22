@@ -1,5 +1,5 @@
-# Haalt een bestand/blokapparaat van de camera via telnet+base64 (snel: bytes, alleen staart checken).
-# argv: pad_op_camera lokaal_bestand
+# Fetches a file/block device from the camera over telnet+base64 (fast: bytes, only checks the tail).
+# argv: path_on_camera local_file
 import sys, socket, base64, hashlib, time, re
 src, dst = sys.argv[1], sys.argv[2]
 s = socket.create_connection(('192.168.1.240', 23), timeout=10)
@@ -14,7 +14,7 @@ def drain(t):
     except socket.timeout: pass
     return bytes(out)
 
-def neg(d):  # telnet-opties weigeren en eruit filteren
+def neg(d):  # refuse telnet options and filter them out
     out = bytearray(); i = 0
     while i < len(d):
         if d[i] == 255 and i + 2 < len(d):
@@ -36,4 +36,4 @@ body = buf.split(b'BEGIN_B64', 1)[1].split(b'END_B64')[0]
 raw = base64.b64decode(re.sub(rb'[^A-Za-z0-9+/=]', b'', body))
 want = re.search(rb'([0-9a-f]{32})\s+' + re.escape(src.encode()), buf).group(1).decode()
 open(dst, 'wb').write(raw); got = hashlib.md5(raw).hexdigest()
-print(len(raw), got, 'camera:', want, 'OK' if got == want else 'FOUT', f'{time.time()-t0:.0f}s')
+print(len(raw), got, 'camera:', want, 'OK' if got == want else 'MISMATCH', f'{time.time()-t0:.0f}s')

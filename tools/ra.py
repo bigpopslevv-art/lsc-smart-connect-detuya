@@ -1,4 +1,4 @@
-# Kleine reverse-engineering helper voor anyka_ipc (ARM32, stripped, non-PIE).
+# Small reverse-engineering helper for anyka_ipc (ARM32, stripped, non-PIE).
 import sys, struct, re
 from elftools.elf.elffile import ELFFile
 from capstone import Cs, CS_ARCH_ARM, CS_MODE_ARM
@@ -8,7 +8,7 @@ f = open(BIN, 'rb'); data = f.read(); elf = ELFFile(open(BIN, 'rb'))
 segs = [(s['p_vaddr'], s['p_offset'], s['p_filesz']) for s in elf.iter_segments() if s['p_type'] == 'PT_LOAD']
 text = elf.get_section_by_name('.text')
 TS, TE = text['sh_addr'], text['sh_addr'] + text['sh_size']
-md = Cs(CS_ARCH_ARM, CS_MODE_ARM); md.detail = False; md.skipdata = True  # .text bevat ook data
+md = Cs(CS_ARCH_ARM, CS_MODE_ARM); md.detail = False; md.skipdata = True  # .text also contains data
 
 def off(va):
     for v, o, n in segs:
@@ -20,12 +20,12 @@ def word(va): return struct.unpack('<I', data[off(va):off(va) + 4])[0]
 def cstr(va):
     o = off(va); e = data.index(b'\0', o); return data[o:e].decode('latin1')
 
-# literal-pool index: waarde -> adressen in .text waar die waarde als woord staat
+# literal-pool index: value -> addresses in .text where that value is stored as a word
 pool = {}
 for a in range(TS, TE, 4):
     pool.setdefault(word(a), []).append(a)
 
-# alle ldr rX,[pc,#imm] -> (instr-adres, geladen literal-adres)
+# all ldr rX,[pc,#imm] -> (instruction address, loaded literal address)
 ldrs = {}
 code = data[off(TS):off(TE)]
 for i in md.disasm(code, TS):
@@ -45,7 +45,7 @@ def xrefs_va(va):
     return [ins for lit in pool.get(va, []) for ins in ldrs.get(lit, [])]
 
 def func_start(a):
-    # zoek terug naar 'push {.., lr}' / stmdb sp!
+    # search backwards for 'push {.., lr}' / stmdb sp!
     for b in range(a, max(TS, a - 0x4000), -4):
         w = word(b)
         if (w & 0xFFFF4000) == 0xE92D4000: return b

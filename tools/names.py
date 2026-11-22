@@ -6,7 +6,7 @@ e=ELFFile(open(BIN,'rb'))
 N={}; S={}
 for x in e.get_section_by_name('.dynsym').iter_symbols():
     if x['st_value']: N[x['st_value']&~1]=x.name; S[x.name]=(x['st_value'],x['st_size'])
-# PLT: imports (libc) -> naam via relocaties
+# PLT: imports (libc) -> name via relocations
 rel=e.get_section_by_name('.rel.plt'); plt=e.get_section_by_name('.plt'); ds=e.get_section_by_name('.dynsym')
 if rel and plt:
     for k,r in enumerate(rel.iter_relocations()):

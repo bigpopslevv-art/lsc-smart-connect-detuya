@@ -1,4 +1,4 @@
-# Zet bestand in één keer via telnet (heredoc + base64) op de camera. argv: lokaal doelpad
+# Puts a file on the camera in one go over telnet (heredoc + base64). argv: local_file target_path
 import sys, base64, hashlib, socket, time
 src, dst = sys.argv[1], sys.argv[2]
 raw = open(src, 'rb').read(); want = hashlib.md5(raw).hexdigest()
@@ -10,4 +10,4 @@ out = read(4)
 if want in out:
     s.send(f'mv {dst}.new {dst} && sync && md5sum {dst}\n'.encode()); time.sleep(1); print(read(3)); print('PUSH OK', want)
 else:
-    print('PUSH MISLUKT, verwacht', want, out[-500:])
+    print('PUSH FAILED, expected', want, out[-500:])

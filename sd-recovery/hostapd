@@ -1,6 +1,6 @@
 #!/bin/sh
-# De firmware kopieert dit bestand van de SD-kaart naar /tmp en start het als
+# The firmware copies this file from the SD card to /tmp and starts it as
 #   /tmp/hostapd /etc/config/hostapd.conf -B
-# (alleen in AP/pairing-modus). Wij misbruiken het als vroege boot-hook: het
-# draait als root, voordat anyka_ipc start, en voert hack.sh van de kaart uit.
+# (only in AP/pairing mode). We abuse it as an early boot hook: it runs as
+# root, before anyka_ipc starts, and executes hack.sh from the card.
 /bin/sh /mnt/hack.sh
