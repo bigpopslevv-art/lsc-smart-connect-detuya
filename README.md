@@ -72,6 +72,8 @@ python3 patch/patch_notuya.py anyka_ipc anyka_ipc.notuya
 Unpack the squashfs, drop in the patched binary, add the custom scripts, repack with the **exact
 same** compression (xz, 128 KB block). Runs on your Linux box. Adjust the md5s and paths at the top
 for your own dump. Result: `usr_new.sqsh` (must be ≤ the partition size).
+It also mutes the 10 Chinese voice prompts (`/usr/share/8k16_cn_*.mp3`) with `firmware/silence.py`
+(copy it to `in/`): factory mode, which we use for RTSP, announces itself at every boot.
 
 ### 4. Flash — `firmware/flash.sh`
 Writes `usr_new.sqsh` to `/dev/mtdblock7`, **reads it back and compares the md5**, and only reboots
@@ -123,6 +125,9 @@ power on" is your lifeline. Card out = back to normal behaviour.
 - **Self-gateway required**, otherwise the wifi re-associates every ~30 s (see step 5).
 - **SD card sometimes not detected** on a cold boot, especially on a weak supply → reseat firmly,
   better supply. Without the card `hack.sh` does not run (the hook lives in the AP-mode path).
+- **Chinese voice at boot.** That is factory mode announcing itself (`8k16_cn_factory_enter_factory_mode.mp3`).
+  There are no English versions; `build.sh` replaces all `8k16_cn_*` prompts with silent MP3s
+  (same frame headers, zeroed audio), so the speaker itself keeps working.
 - **CRLF.** All shell scripts must have **LF** line endings; run them through `tr -d '\r'` +
   `sh -n` before they go on the camera.
 

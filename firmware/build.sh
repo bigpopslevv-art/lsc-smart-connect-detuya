@@ -42,6 +42,11 @@ done
 mv $U/sbin/recover_cfg.sh $U/sbin/recover_cfg.sh.orig
 printf '#!/bin/sh\n# disabled (original: recover_cfg.sh.orig)\nexit 0\n' > $U/sbin/recover_cfg.sh && chmod 755 $U/sbin/recover_cfg.sh
 
+# 5b) mute the Chinese voice prompts (factory mode etc. play them at boot): same MP3 frames, zero audio
+n=0
+for f in $U/share/8k16_cn_*.mp3; do python3 in/silence.py "$f" "$f.tmp" >/dev/null && mv "$f.tmp" "$f"; n=$((n+1)); done
+[ "$n" = 10 ]
+
 # 6) syntax-check all modified scripts
 for f in service.sh main.sh lsc_lockdown.sh lsc_led.sh state_led.sh red_led.sh blue_led.sh recover_cfg.sh; do sh -n $U/sbin/$f; done
 
